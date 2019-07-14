@@ -359,7 +359,7 @@ tJBL_STATUS JcopOsDwnld::TriggerApdu(JcopOs_ImageInfo_t* pVersionInfo, tJBL_STAT
 
         DLOG_IF(INFO, nfc_debug_enabled)
       << StringPrintf("%s: Calling Secure Element Transceive", fn);
-        stat = mchannel->transceive (pTranscv_Info->sSendData,
+        stat = mchannel->transceiveRaw (pTranscv_Info->sSendData,
                                 pTranscv_Info->sSendlength,
                                 pTranscv_Info->sRecvData,
                                 pTranscv_Info->sRecvlength,
@@ -490,7 +490,7 @@ tJBL_STATUS JcopOsDwnld::SendUAICmds(JcopOs_ImageInfo_t* Os_info, tJBL_STATUS st
                (pTranscv_Info->sSendData[1] != 0x00))
             {
 
-                stat = mchannel->transceive(pTranscv_Info->sSendData,
+                stat = mchannel->transceiveRaw(pTranscv_Info->sSendData,
                                         pTranscv_Info->sSendlength,
                                         pTranscv_Info->sRecvData,
                                         pTranscv_Info->sRecvlength,
@@ -582,7 +582,7 @@ tJBL_STATUS JcopOsDwnld::UaiTriggerApdu(JcopOs_ImageInfo_t* pVersionInfo, tJBL_S
 
         DLOG_IF(INFO, nfc_debug_enabled)
       << StringPrintf("%s: Calling Secure Element Transceive", fn);
-        stat = mchannel->transceive (pTranscv_Info->sSendData,
+        stat = mchannel->transceiveRaw (pTranscv_Info->sSendData,
                                 pTranscv_Info->sSendlength,
                                 pTranscv_Info->sRecvData,
                                 pTranscv_Info->sRecvlength,
@@ -693,7 +693,7 @@ tJBL_STATUS JcopOsDwnld::GetInfo(JcopOs_ImageInfo_t* pImageInfo, tJBL_STATUS sta
 #endif
             {
                 LOG(ERROR) << StringPrintf("Starting 3-Step update");
-                memcpy(pImageInfo->fls_path, path[pImageInfo->index], sizeof(path[pImageInfo->index]));
+                memcpy(pImageInfo->fls_path, path[pImageInfo->index], strlen(path[pImageInfo->index]));
                 pImageInfo->index++;
             }
             status = STATUS_OK;
