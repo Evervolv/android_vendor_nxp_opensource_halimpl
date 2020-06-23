@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 2010-2019 NXP Semiconductors
+ * Copyright (C) 2010-2020 NXP Semiconductors
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -42,7 +42,6 @@
 #define FW_DNLD_LEN_OFFSET 1
 #define NORMAL_MODE_LEN_OFFSET 2
 #define FRAGMENTSIZE_MAX PHNFC_I2C_FRAGMENT_SIZE
-
 static bool_t bFwDnldFlag = false;
 extern phTmlNfc_i2cfragmentation_t fragmentation_enabled;
 bool_t notifyFwrequest;
@@ -101,6 +100,8 @@ NFCSTATUS phTmlNfc_i2c_open_and_configure(pphTmlNfc_Config_t pConfig,
   }
 
   *pLinkHandle = (void*)((intptr_t)nHandle);
+  phTmlNfc_i2c_reset(*pLinkHandle, MODE_NFC_ENABLED);
+
 #if(NXP_EXTNS == TRUE)
   if (0 != sem_init(&txrxSemaphore, 0, 1)) {
     NXPLOG_TML_E("_i2c_open() Failed: reason sem_init : retval %x", nHandle);
@@ -168,10 +169,10 @@ int phTmlNfc_i2c_read(void* pDevHandle, uint8_t* pBuffer, int nNbBytesToRead) {
   ret_Select =
       select((int)((intptr_t)pDevHandle + (int)1), &rfds, NULL, NULL, &tv);
   if (ret_Select < 0) {
-    NXPLOG_TML_E("i2c select() errno : %x", errno);
+    NXPLOG_TML_D("i2c select() errno : %x", errno);
     return -1;
   } else if (ret_Select == 0) {
-    NXPLOG_TML_E("i2c select() Timeout");
+    NXPLOG_TML_D("i2c select() Timeout");
     return -1;
   } else {
     ret_Read = read((intptr_t)pDevHandle, pBuffer, totalBtyesToRead - numRead);
@@ -229,7 +230,7 @@ int phTmlNfc_i2c_read(void* pDevHandle, uint8_t* pBuffer, int nNbBytesToRead) {
         return -1;
       } else {
         if (bFwDnldFlag == false) {
-          NXPLOG_TML_E("_i2c_read() [hdr] received");
+          NXPLOG_TML_D("_i2c_read() [hdr] received");
           phNxpNciHal_print_packet("RECV", pBuffer, NORMAL_MODE_HEADER_LEN);
         }
 #if(NXP_EXTNS == TRUE)
@@ -273,7 +274,7 @@ int phTmlNfc_i2c_write(void* pDevHandle, uint8_t* pBuffer,
   }
   if (fragmentation_enabled == I2C_FRAGMENATATION_DISABLED &&
       nNbBytesToWrite > FRAGMENTSIZE_MAX) {
-    NXPLOG_TML_E(
+    NXPLOG_TML_D(
         "i2c_write() data larger than maximum I2C  size,enable I2C "
         "fragmentation");
     return -1;
@@ -301,10 +302,10 @@ int phTmlNfc_i2c_write(void* pDevHandle, uint8_t* pBuffer,
         usleep(500);
       }
     } else if (ret == 0) {
-      NXPLOG_TML_E("_i2c_write() EOF");
+      NXPLOG_TML_D("_i2c_write() EOF");
       return -1;
     } else {
-      NXPLOG_TML_E("_i2c_write() errno : %x", errno);
+      NXPLOG_TML_D("_i2c_write() errno : %x", errno);
       if (errno == EINTR || errno == EAGAIN) {
         continue;
       }
@@ -339,20 +340,97 @@ int phTmlNfc_i2c_reset(void* pDevHandle, long level) {
   ret = ioctl((intptr_t)pDevHandle, PN544_SET_PWR, level);
   if (ret < 0) {
     NXPLOG_TML_E("%s :failed errno = 0x%x", __func__, errno);
-    if ((level == MODE_FW_DWNLD_WITH_VEN || level == MODE_FW_DWND_HIGH) && errno == EBUSY) {
+    if ((level == MODE_FW_DWNLD_WITH_VEN || level == MODE_FW_DWND_HIGH || level == MODE_FW_DWND_HDR) && errno == EBUSY) {
          notifyFwrequest = true;
     } else {
          notifyFwrequest = false;
     }
   }
-  if ((level == MODE_FW_DWNLD_WITH_VEN || level == MODE_FW_DWND_HIGH) && ret == 0) {
-        bFwDnldFlag = true;
-     } else {
-        bFwDnldFlag = false;
-     }
+  if ((level != MODE_FW_DWNLD_WITH_VEN && level != MODE_FW_DWND_HIGH && level != MODE_FW_DWND_HDR)
+      && ret == 0) {
+    bFwDnldFlag = false;
+  }
+
   return ret;
 }
 
+/*******************************************************************************
+**
+** Function         phTmlNfc_ese_reset
+**
+** Description      Request NFCC to reset the eSE
+**
+** Parameters       pDevHandle     - valid device handle
+**                  level          - reset level
+**
+** Returns           0   - reset operation success
+**                  else - reset operation failure
+**
+*******************************************************************************/
+int phTmlNfc_ese_reset(void* pDevHandle, long level) {
+  int ret = -1;;
+  NXPLOG_TML_D("phTmlNfc_ese_reset(), level %ld", level);
+
+  if (NULL == pDevHandle) {
+    return -1;
+  }
+  ret = ioctl((intptr_t)pDevHandle, ESE_SET_PWR, level);
+  if (ret < 0) {
+    NXPLOG_TML_E("%s :failed errno = 0x%x", __func__, errno);
+  }
+  return ret;
+}
+
+/*******************************************************************************
+**
+** Function         phTmlNfc_get_platform
+**
+** Description      Get platform interface type (i2c or i3c) for common mw
+**
+** Parameters       pDevHandle     - valid device handle
+**
+** Returns           0   - i2c
+**                   1   - i3c
+**
+*******************************************************************************/
+int phTmlNfc_get_platform(void* pDevHandle) {
+  int ret = -1;
+  unsigned char interface = PLATFORM_IF_I2C;
+
+  ret = ioctl((intptr_t)pDevHandle, P544_GET_PLATFORM_INTERFACE);
+
+  /* ret 0 -> I2C, 1 -> I3C interface */
+  if (ret < 0) {
+      NXPLOG_TML_D("%s: ioctl failed, getting value from config", __func__);
+
+      if (GetNxpNumValue(NAME_NFC_INTERFACE, &interface, sizeof(interface))) {
+        NXPLOG_TML_D("NFC_INTERFACE value: %d", interface);
+        ret = interface;
+      }
+  }
+  if ((ret == PLATFORM_IF_I2C) || (ret == PLATFORM_IF_I3C)) {
+    NXPLOG_TML_D("%s: interface = %d", __func__, ret);
+  } else {
+    ret = PLATFORM_IF_I2C;
+    NXPLOG_TML_E("%s: NFC_INTERFACE not present in config/invalid, setting to I2C", __func__);
+  }
+
+  return ret;
+}
+
+/*******************************************************************************
+**
+** Function         phTmlNfc_EnableFwDnldMode
+**
+** Description      updates the state to Download mode
+**
+** Parameters       True/False
+**
+** Returns          None
+*******************************************************************************/
+void phTmlNfc_EnableFwDnldMode(bool mode) {
+  bFwDnldFlag = mode;
+}
 /*******************************************************************************
 **
 ** Function         getDownloadFlag

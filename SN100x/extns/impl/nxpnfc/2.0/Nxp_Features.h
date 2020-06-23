@@ -1,6 +1,6 @@
 /******************************************************************************
  *
- *  Copyright 2018 NXP
+ *  Copyright 2018-2020 NXP
  *
  *  Licensed under the Apache License, Version 2.0 (the "License");
  *  you may not use this file except in compliance with the License.
@@ -33,7 +33,8 @@
 #define FW_MOBILE_MAJOR_NUMBER_PN557 0x01
 #define FW_MOBILE_MAJOR_NUMBER_SN100U 0x010
 
-#define NFA_EE_MAX_EE_SUPPORTED 4
+/*Including T4T NFCEE by incrementing 1*/
+#define NFA_EE_MAX_EE_SUPPORTED 5
 
 #define JCOP_VER_3_1    1
 #define JCOP_VER_3_2    2
@@ -215,7 +216,7 @@ extern tNfc_featureList nfcFL;
         if ((chipType == sn100u)) {                                         \
             CONFIGURE_FEATURELIST_NFCC(sn100u)                              \
             nfcFL.nfccFL._NFCC_SPI_FW_DOWNLOAD_SYNC = true;                 \
-            nfcFL.nfccFL._NFA_EE_MAX_EE_SUPPORTED = 4;                      \
+            nfcFL.nfccFL._NFA_EE_MAX_EE_SUPPORTED = 5;                      \
             \
             \
             nfcFL.eseFL._NCI_NFCEE_PWR_LINK_CMD = true;                     \

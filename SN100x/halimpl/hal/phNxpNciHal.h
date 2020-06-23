@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 2010-2019 NXP Semiconductors
+ * Copyright (C) 2010-2020 NXP Semiconductors
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -16,13 +16,13 @@
 #ifndef _PHNXPNCIHAL_H_
 #define _PHNXPNCIHAL_H_
 
+#include "NxpMfcReader.h"
+#include "NxpNfcCapability.h"
 #include <hardware/nfc.h>
 #include <phNxpNciHal_utils.h>
-#include "NxpNfcCapability.h"
-#include "hal_nxpnfc.h"
-#ifdef ENABLE_ESE_CLIENT
 #include "eSEClientIntf.h"
-#endif
+#include "eSEClientExtns.h"
+#include "phNxpNciHal_IoctlOperations.h"
 
 /********************* Definitions and structures *****************************/
 #define MAX_RETRY_COUNT 5
@@ -40,6 +40,7 @@
 /* Uncomment define ENABLE_ESE_CLIENT to
 enable eSE client */
 //#define ENABLE_ESE_CLIENT TRUE
+#define HAL_NFC_FW_UPDATE_STATUS_EVT 0xA
 
 /*Mem alloc with 8 byte alignment*/
 #define size_align(sz) ((((sz)-1) | 7) + 1)
@@ -68,6 +69,10 @@ typedef void(phNxpNciHal_control_granted_callback_t)();
 #define CORE_RESET_TRIGGER_TYPE_CORE_RESET_CMD_RECEIVED 0x02
 #define CORE_RESET_TRIGGER_TYPE_POWERED_ON              0x01
 #define NCI2_0_CORE_RESET_TRIGGER_TYPE_OVER_TEMPERATURE ((uint8_t)0xA1)
+#define CORE_RESET_TRIGGER_TYPE_UNRECOVERABLE_ERROR 0x00
+#define CORE_RESET_TRIGGER_TYPE_FW_ASSERT ((uint8_t)0xA0)
+#define CORE_RESET_TRIGGER_TYPE_WATCHDOG_RESET ((uint8_t)0xA3)
+#define CORE_RESET_TRIGGER_TYPE_INPUT_CLOCK_LOST ((uint8_t)0xA4)
 //#define NCI_MSG_CORE_RESET           0x00
 //#define NCI_MSG_CORE_INIT            0x01
 #define NCI_MT_MASK                  0xE0
@@ -83,6 +88,7 @@ typedef void(phNxpNciHal_control_granted_callback_t)();
 #define NXP_CORE_GET_CONFIG_CMD      0x03
 #define NXP_CORE_SET_CONFIG_CMD      0x02
 #define NXP_MAX_CONFIG_STRING_LEN 260
+#define NCI_HEADER_SIZE 3
 
 typedef struct nci_data {
   uint16_t len;
@@ -94,6 +100,13 @@ typedef enum {
   HAL_STATUS_OPEN,
   HAL_STATUS_MIN_OPEN
 } phNxpNci_HalStatus;
+
+typedef enum {
+    HAL_NFC_FW_UPDATE_INVALID = 0x00,
+    HAL_NFC_FW_UPDATE_START,
+    HAL_NFC_FW_UPDATE_SCUCCESS,
+    HAL_NFC_FW_UPDATE_FAILED,
+}HalNfcFwUpdateStatus;
 
 typedef enum {
   GPIO_UNKNOWN = 0x00,
@@ -188,17 +201,23 @@ typedef struct phNxpNciMwEepromArea {
   uint8_t p_rx_data[32];
 } phNxpNciMwEepromArea_t;
 
+enum {
+  SE_TYPE_ESE,
+  SE_TYPE_UICC,
+  SE_TYPE_UICC2,
+  NUM_SE_TYPES
+};
+
 typedef void (*fpVerInfoStoreInEeprom_t)();
 typedef int (*fpVerifyCscEfsTest_t)(char* nfcc_csc, char* rffilepath,
                               char* fwfilepath);
 typedef int (*fpRegRfFwDndl_t)(uint8_t* fw_update_req,
                    uint8_t* rf_update_req,
                    uint8_t skipEEPROMRead);
+typedef int (*fpPropConfCover_t)(bool attached, int type);
+void phNxpNciHal_initializeRegRfFwDnld();
 void phNxpNciHal_initializeRegRfFwDnld();
 void phNxpNciHal_deinitializeRegRfFwDnld();
-#if(NXP_EXTNS == true)
-void phNxpNciHal_getNxpConfig(nfc_nci_IoctlInOutData_t *pInpOutData);
-#endif
 /*set config management*/
 
 #define TOTAL_DURATION 0x00
@@ -226,7 +245,11 @@ typedef enum {
   EEPROM_SWP1A_INTF,
   EEPROM_SWP2_INTF,
   EEPROM_FLASH_UPDATE,
-  EEPROM_AUTH_CMD_TIMEOUT
+  EEPROM_AUTH_CMD_TIMEOUT,
+  EEPROM_GUARD_TIMER,
+  EEPROM_T4T_NFCEE_ENABLE,
+  EEPROM_AUTONOMOUS_MODE,
+  EEPROM_CE_PHONE_OFF_CFG,
 } phNxpNci_EEPROM_request_type_t;
 
 typedef struct phNxpNci_EEPROM_info {
@@ -308,5 +331,53 @@ NFCSTATUS phNxpNciHal_send_nfcee_pwr_cntl_cmd(uint8_t type);
 ** Returns          none
 *******************************************************************************/
 void phNxpNciHal_configFeatureList(uint8_t* init_rsp, uint16_t rsp_len);
+
+/******************************************************************************
+ * Function         phNxpNciHal_read_and_update_se_state
+ *
+ * Description      This will read NFCEE status from system properties
+ *                  and update to NFCC to enable/disable.
+ *
+ * Returns          none
+ *
+ ******************************************************************************/
+void phNxpNciHal_read_and_update_se_state();
+
+/******************************************************************************
+ * Function         phNxpNciHal_Abort
+ *
+ * Description      This will post the message to the upper layer
+ *                  using the callback p_nfc_stack_cback_backup.
+ *
+ * Returns          none
+ *
+ ******************************************************************************/
+extern bool phNxpNciHal_Abort();
+/******************************************************************************
+ * Function         phNxpNciHal_read_fw_dw_status
+ *
+ * Description      This will read the value of fw download status flag
+ *                  from eeprom
+ *
+ * Parameters       value - this parameter will be updated with the flag
+ *                  value from eeprom.
+ *
+ * Returns          status of the read
+ *
+ ******************************************************************************/
+NFCSTATUS phNxpNciHal_read_fw_dw_status(uint8_t &value);
+
+/******************************************************************************
+ * Function         phNxpNciHal_write_fw_dw_status
+ *
+ * Description      This will update value of fw download status flag
+ *                  to eeprom
+ *
+ * Parameters       value - this value will be updated to eeprom flag.
+ *
+ * Returns          status of the write
+ *
+ ******************************************************************************/
+NFCSTATUS phNxpNciHal_write_fw_dw_status(uint8_t value);
 
 #endif /* _PHNXPNCIHAL_H_ */

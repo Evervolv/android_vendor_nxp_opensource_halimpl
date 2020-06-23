@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 2019 NXP Semiconductors
+ * Copyright (C) 2019-2020 NXP Semiconductors
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -14,7 +14,6 @@
  * limitations under the License.
  */
 
-#include "hal_nxpnfc.h"
 #include "phNfcStatus.h"
 #include "phNxpConfig.h"
 #include "phNxpLog.h"
@@ -31,52 +30,54 @@
 int phNxpNciHal_ioctlIf(long arg, void *p_data);
 
 /*******************************************************************************
-**
-** Function         phNxpNciHal_loadPersistLog
-**
-** Description      It shall be used to get persist log.
-**
-** Parameters       unit8_t index
-**
-** Returns          It returns persist log from the [index]
-*******************************************************************************/
-void phNxpNciHal_loadPersistLog(uint8_t index);
+ **
+ ** Function         phNxpNciHal_savePersistLog
+ **
+ ** Description      Save persist log with “reason” at available index.
+ **
+ ** Parameters       uint8_t reason
+ **
+ ** Returns          returns the  index of saved reason/Log.
+ *******************************************************************************/
+uint8_t phNxpNciHal_savePersistLog(uint8_t reason);
 
 /*******************************************************************************
-**
-** Function         phNxpNciHal_savePersistLog
-**
-** Description      It shall be used to save persist log to the file[index].
-**
-** Parameters       unit8_t index
-**
-** Returns          void
-*******************************************************************************/
-void phNxpNciHal_savePersistLog(uint8_t index);
+ **
+ ** Function         phNxpNciHal_loadPersistLog
+ **
+ ** Description      If given index is valid, return a log at the given index.
+ **
+ ** Parameters       uint8_t index
+ **
+ ** Returns          If index found, return a log as string else
+ **                  return a "" string
+ *******************************************************************************/
+string phNxpNciHal_loadPersistLog(uint8_t index);
 
 /*******************************************************************************
 **
 ** Function         phNxpNciHal_getSystemProperty
 **
-** Description      It shall be used to get property vale of the Key
+** Description      It shall be used to get property value of the given Key
 **
 ** Parameters       string key
 **
 ** Returns          It returns the property value of the key
 *******************************************************************************/
-void phNxpNciHal_getSystemProperty(string key);
+string phNxpNciHal_getSystemProperty(string key);
 
 /*******************************************************************************
-**
-** Function         phNxpNciHal_setSystemProperty
-**
-** Description      It shall be used to save value to system property[key name]
-**
-** Parameters       string key, string value
-**
-** Returns          void
-*******************************************************************************/
-void phNxpNciHal_setSystemProperty(string key, string value);
+ **
+ ** Function         phNxpNciHal_setSystemProperty
+ **
+ ** Description      It shall be used to save/chage value to system property
+ **                  based on provided key.
+ **
+ ** Parameters       string key, string value
+ **
+ ** Returns          true if success, false if fail
+ *******************************************************************************/
+bool phNxpNciHal_setSystemProperty(string key, string value);
 
 /*******************************************************************************
 **
@@ -89,7 +90,7 @@ void phNxpNciHal_setSystemProperty(string key, string value);
 **
 ** Returns          void
 *******************************************************************************/
-void phNxpNciHal_getNxpConfigIf(nxp_nfc_config_t *configs);
+string phNxpNciHal_getNxpConfigIf();
 
 /*******************************************************************************
 **
@@ -101,7 +102,7 @@ void phNxpNciHal_getNxpConfigIf(nxp_nfc_config_t *configs);
 **
 ** Returns          status of eSE reset response
 *******************************************************************************/
-NFCSTATUS phNxpNciHal_resetEse();
+NFCSTATUS phNxpNciHal_resetEse(uint64_t resetType);
 
 /******************************************************************************
 ** Function         phNxpNciHal_setNxpTransitConfig
@@ -109,10 +110,10 @@ NFCSTATUS phNxpNciHal_resetEse();
 ** Description      This function overwrite libnfc-nxpTransit.conf file
 **                  with transitConfValue.
 **
-** Returns          void.
+** Returns          bool.
 **
 *******************************************************************************/
-void phNxpNciHal_setNxpTransitConfig(char *transitConfValue);
+bool phNxpNciHal_setNxpTransitConfig(char *transitConfValue);
 
 /*******************************************************************************
  **
@@ -126,3 +127,52 @@ void phNxpNciHal_setNxpTransitConfig(char *transitConfValue);
 int phNxpNciHal_CheckFwRegFlashRequired(uint8_t *fw_update_req,
                                         uint8_t *rf_update_req,
                                         uint8_t skipEEPROMRead);
+
+/*******************************************************************************
+ **
+ ** Function:        property_get_intf()
+ **
+ ** Description:     Gets property value for the input property name
+ **
+ ** Parameters       propName:   Name of the property whichs value need to get
+ **                  valueStr:   output value of the property.
+ **                  defaultStr: default value of the property if value is not
+ **                              there this will be set to output value.
+ **
+ ** Returns:         actual length of the property value
+ **
+ ********************************************************************************/
+int property_get_intf(const char *propName, char *valueStr,
+                      const char *defaultStr);
+
+/*******************************************************************************
+ **
+ ** Function:        property_set_intf()
+ **
+ ** Description:     Sets property value for the input property name
+ **
+ ** Parameters       propName:   Name of the property whichs value need to set
+ **                  valueStr:   value of the property.
+ **
+ ** Returns:        returns 0 on success, < 0 on failure
+ **
+ ********************************************************************************/
+int property_set_intf(const char *propName, const char *valueStr);
+
+/*******************************************************************************
+ **
+ ** Function:        phNxpNciHal_Abort()
+ **
+ ** Description:     This function shall be used to trigger the abort
+ **
+ ** Parameters       None
+ **
+ ** Returns:        returns 0 on success, < 0 on failure
+ **
+ ********************************************************************************/
+bool phNxpNciHal_Abort();
+
+#undef PROPERTY_VALUE_MAX
+#define PROPERTY_VALUE_MAX 92
+#define property_get(a, b, c) property_get_intf(a, b, c)
+#define property_set(a, b) property_set_intf(a, b)

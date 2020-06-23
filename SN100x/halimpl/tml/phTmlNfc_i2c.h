@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 2010-2019 NXP Semiconductors
+ * Copyright (C) 2010-2020 NXP Semiconductors
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -30,8 +30,18 @@ typedef enum {
   MODE_ISO_RST,
   MODE_FW_DWND_HIGH,
   MODE_POWER_RESET,
-  MODE_FW_GPIO_LOW
+  MODE_FW_GPIO_LOW,
+  MODE_NFC_ENABLED,
+  MODE_NFC_DISABLED,
+  MODE_FW_DWND_HDR,
 } MODE_I2C_SET_PWR;
+
+typedef enum {
+  MODE_ESE_POWER_ON = 0, /* eSE POWER ON */
+  MODE_ESE_POWER_OFF,    /* eSE POWER OFF */
+  MODE_ESE_POWER_STATE,  /* eSE POWER STATE */
+  MODE_ESE_COLD_RESET    /* eSE COLD RESET */
+}MODE_ESE_SET_PWR;
 
 /* Function declarations */
 void phTmlNfc_i2c_close(void* pDevHandle);
@@ -40,7 +50,9 @@ NFCSTATUS phTmlNfc_i2c_open_and_configure(pphTmlNfc_Config_t pConfig,
 int phTmlNfc_i2c_read(void* pDevHandle, uint8_t* pBuffer, int nNbBytesToRead);
 int phTmlNfc_i2c_write(void* pDevHandle, uint8_t* pBuffer, int nNbBytesToWrite);
 int phTmlNfc_i2c_reset(void* pDevHandle, long level);
+int phTmlNfc_ese_reset(void* pDevHandle, long level);
 bool_t getDownloadFlag(void);
+void phTmlNfc_EnableFwDnldMode(bool mode);
 extern bool_t notifyFwrequest;
 extern phTmlNfc_i2cfragmentation_t fragmentation_enabled;
 
@@ -61,53 +73,25 @@ NFCSTATUS phTmlNfc_i2c_set_spm_state(void* pa_data, void* pDevHandle);
 NFCSTATUS phTmlNfc_i2c_reset_spm_state(void* pa_data, void* pDevHandle);
 NFCSTATUS phTmlNfc_rel_svdd_wait(void* pDevHandle);
 NFCSTATUS phTmlNfc_rel_dwpOnOff_wait(void* pDevHandle);
+int phTmlNfc_get_platform(void* pDevHandle);
 /*
- * SPI Request NFCC to enable p61 power, only in param
- * Only for SPI
- * level 1 = Enable power
- * level 0 = Disable power
+ * 1. SPI Request NFCC to enable p61 power, only in param
+ *   Only for SPI
+ *   level 1 = Enable power
+ *   level 0 = Disable power
+ * 2. NFC Request the eSE cold reset, only with MODE_ESE_COLD_RESET
  */
-#define P61_SET_SPI_PWR _IOW(PN544_MAGIC, 0x02, unsigned int)
+#define ESE_SET_PWR _IOW(PN544_MAGIC, 0x02, unsigned int)
 
 /* SPI or DWP can call this ioctl to get the current
  * power state of P61
  *
 */
-#define P61_GET_PWR_STATUS _IOR(PN544_MAGIC, 0x03, unsigned int)
-
-/* DWP side this ioctl will be called
- * level 1 = Wired access is enabled/ongoing
- * level 0 = Wired access is disalbed/stopped
-*/
-#define P61_SET_WIRED_ACCESS _IOW(PN544_MAGIC, 0x04, long)
+#define ESE_GET_PWR _IOR(PN544_MAGIC, 0x03, unsigned int)
 
 /*
-  NFC Init will call the ioctl to register the PID with the i2c driver
-*/
-#define P544_SET_NFC_SERVICE_PID _IOW(PN544_MAGIC, 0x05, long)
-
-/*
-  NFC and SPI will call the ioctl to get the i2c/spi bus access
-*/
-#define P544_GET_ESE_ACCESS _IOW(PN544_MAGIC, 0x06, long)
-
-/*
-  NFC and SPI will call the ioctl to update the power scheme
-*/
-#define P544_SET_POWER_SCHEME _IOW(PN544_MAGIC, 0x07, long)
-/*
-  NFC will call the ioctl to release the svdd protection
-*/
-#define P544_REL_SVDD_WAIT _IOW(PN544_MAGIC, 0x08, long)
-/* SPI or DWP can call this ioctl to set the JCOP download
- * state of P61
- *
-*/
-#define P544_SECURE_TIMER_SESSION _IOW(PN544_MAGIC, 0x0A, long)
-
-#define PN544_SET_DWNLD_STATUS _IOW(PN544_MAGIC, 0x09, long)
-/*
- * NFC will call the ioctlto release the dwp on/off protection
+ * get platform interface type(i2c or i3c) for common MW
+ * return 0 - i2c, 1 - i3c
  */
-#define P544_REL_DWPONOFF_WAIT _IOW(PN544_MAGIC, 0x0A, long)
+#define P544_GET_PLATFORM_INTERFACE _IO(PN544_MAGIC, 0x04)
 //#endif

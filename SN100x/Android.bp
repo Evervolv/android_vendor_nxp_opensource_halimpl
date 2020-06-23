@@ -50,6 +50,9 @@ cc_library_shared {
         "halimpl/utils/phNxpNciHal_utils.cc",
         "halimpl/utils/sparse_crc32.cc",
         "halimpl/hal/phNxpNciHal_IoctlOperations.cc",
+        "halimpl/hal/phNxpNciHal_extOperations.cc",
+        "halimpl/eseclients_extns/src/eSEClientExtns.cc",
+        "halimpl/mifare/NxpMfcReader.cc",
     ],
 
     local_include_dirs: [
@@ -62,7 +65,8 @@ cc_library_shared {
         "halimpl/tml",
         "halimpl/utils",
         "halimpl/eseclients_extns/inc",
-        "halimpl/src/include"
+        "halimpl/src/include",
+        "halimpl/mifare",
     ],
 
     include_dirs: [
@@ -72,13 +76,19 @@ cc_library_shared {
     export_include_dirs: [
         "extns/impl",
         "halimpl/inc",
+        "halimpl/hal",
+        "halimpl/utils",
+        "halimpl/log",
         "halimpl/common",
+        "halimpl/mifare",
+        "halimpl/eseclients_extns/inc",
     ],
 
     shared_libs: [
         "android.hardware.nfc@1.0",
         "android.hardware.nfc@1.1",
         "android.hardware.nfc@1.2",
+        "vendor.nxp.hardware.nfc@2.0",
         "android.hardware.secure_element@1.0",
         "libbase",
         "libcutils",
@@ -86,8 +96,16 @@ cc_library_shared {
         "libhardware",
         "libhardware_legacy",
         "libhidlbase",
-        "libhidltransport",
         "liblog",
         "libutils",
     ],
+
+    header_libs: [
+        "libese_client_headers",
+    ],
+
+    sanitize: {
+        cfi: true,
+        integer_overflow: true,
+    },
 }

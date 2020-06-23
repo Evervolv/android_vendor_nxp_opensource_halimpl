@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 2012-2018 NXP Semiconductors
+ * Copyright (C) 2012-2020 NXP Semiconductors
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -40,6 +40,7 @@ extern bool_t wFwUpdateReq;
 extern bool_t wRfUpdateReq;
 extern bool_t force_fw_download_req;
 extern fpRegRfFwDndl_t fpRegRfFwDndl;
+extern fpPropConfCover_t fpPropConfCover;
 #define UINT8_TO_STREAM(p, u8) \
   { *(p)++ = (uint8_t)(u8); }
 

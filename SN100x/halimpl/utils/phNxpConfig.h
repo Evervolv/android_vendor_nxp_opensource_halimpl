@@ -18,9 +18,9 @@
 
 /******************************************************************************
  *
- *  The original Work has been changed by NXP Semiconductors.
+ *  The original Work has been changed by NXP.
  *
- *  Copyright (C) 2013-2019 NXP Semiconductors
+ *  Copyright (C) 2013-2020 NXP
  *
  *  Licensed under the Apache License, Version 2.0 (the "License");
  *  you may not use this file except in compliance with the License.
@@ -69,6 +69,7 @@ extern char Fw_Lib_Path[256];
 #define NAME_NXPLOG_TML_LOGLEVEL "NXPLOG_TML_LOGLEVEL"
 
 #define NAME_MIFARE_READER_ENABLE "MIFARE_READER_ENABLE"
+#define NAME_LEGACY_MIFARE_READER "LEGACY_MIFARE_READER"
 #define NAME_FW_STORAGE "FW_STORAGE"
 #define NAME_NXP_NFC_DEV_NODE "NXP_NFC_DEV_NODE"
 #define NAME_NXP_NFC_CHIP "NXP_NFC_CHIP"
@@ -84,7 +85,6 @@ extern char Fw_Lib_Path[256];
 #define NAME_NXP_EXT_TVDD_CFG_1 "NXP_EXT_TVDD_CFG_1"
 #define NAME_NXP_EXT_TVDD_CFG_2 "NXP_EXT_TVDD_CFG_2"
 #define NAME_NXP_EXT_TVDD_CFG_3 "NXP_EXT_TVDD_CFG_3"
-#define NAME_NXP_RF_CONF_BLK_MAX "NXP_RF_CONF_MAX_NUM"
 #define NAME_NXP_CORE_CONF_EXTN "NXP_CORE_CONF_EXTN"
 #define NAME_NXP_CORE_CONF "NXP_CORE_CONF"
 #define NAME_NXP_NFC_PROFILE_EXTN "NXP_NFC_PROFILE_EXTN"
@@ -131,7 +131,7 @@ extern char Fw_Lib_Path[256];
 #define NAME_NFA_PROPRIETARY_CFG "NFA_PROPRIETARY_CFG"
 #define NAME_PRESENCE_CHECK_ALGORITHM "PRESENCE_CHECK_ALGORITHM"
 #define NAME_NXP_CORE_PROP_SYSTEM_DEBUG "NXP_CORE_PROP_SYSTEM_DEBUG"
-#define NAME_NXP_CORE_SCRN_OFF_AUTONOMOUS_ENABLE "NXP_CORE_SCRN_OFF_AUTONOMOUS_ENABLE"
+#define NAME_NXP_AUTONOMOUS_ENABLE "NXP_AUTONOMOUS_ENABLE"
 #define NAME_NXP_P61_LS_DEFAULT_INTERFACE "NXP_P61_LS_DEFAULT_INTERFACE"
 #define NAME_NXP_LS_FORCE_UPDATE_REQUIRED "NXP_LS_FORCE_UPDATE_REQUIRED"
 #define NAME_NXP_JCOP_FORCE_UPDATE_REQUIRED "NXP_JCOP_FORCE_UPDATE_REQUIRED"
@@ -141,6 +141,7 @@ extern char Fw_Lib_Path[256];
 #define NAME_OFFHOST_ROUTE_UICC "OFFHOST_ROUTE_UICC"
 #define NAME_DEFAULT_ISODEP_ROUTE "DEFAULT_ISODEP_ROUTE"
 #define NAME_ENABLE_VEN_TOGGLE "ENABLE_VEN_TOGGLE"
+#define NAME_NFC_INTERFACE "NFC_INTERFACE"
 #if(NXP_EXTNS == TRUE)
 #define NAME_NXP_SE_COLD_TEMP_ERROR_DELAY "NXP_SE_COLD_TEMP_ERROR_DELAY"
 #define NAME_P2P_LISTEN_TECH_MASK "P2P_LISTEN_TECH_MASK"
@@ -156,10 +157,12 @@ extern char Fw_Lib_Path[256];
 #define NAME_DEFAULT_AID_PWR_STATE "DEFAULT_AID_PWR_STATE"
 #define NAME_DEFAULT_DESFIRE_PWR_STATE "DEFAULT_DESFIRE_PWR_STATE"
 #define NAME_DEFAULT_MIFARE_CLT_PWR_STATE "DEFAULT_MIFARE_CLT_PWR_STATE"
+#define NAME_DEFAULT_T4TNFCEE_AID_POWER_STATE "DEFAULT_T4TNFCEE_AID_POWER_STATE"
 #define NAME_FORWARD_FUNCTIONALITY_ENABLE "FORWARD_FUNCTIONALITY_ENABLE"
 #define NAME_DEFAULT_FELICA_CLT_PWR_STATE "DEFAULT_FELICA_CLT_PWR_STATE"
 #define NAME_CHECK_DEFAULT_PROTO_SE_ID "NXP_CHECK_DEFAULT_PROTO_SE_ID"
 #define NAME_NXP_DEFAULT_UICC2_SELECT "NXP_DEFAULT_UICC2_SELECT"
+#define NAME_NXP_T4T_NFCEE_ENABLE "NXP_T4T_NFCEE_ENABLE"
 #define NAME_NXP_SMB_TRANSCEIVE_TIMEOUT "NXP_SMB_TRANSCEIVE_TIMEOUT"
 #define NAME_NXP_SMB_ERROR_RETRY "NXP_SMB_ERROR_RETRY"
 #define NAME_DEFUALT_GSMA_PWR_STATE "DEFUALT_GSMA_PWR_STATE"
@@ -171,6 +174,12 @@ extern char Fw_Lib_Path[256];
 #define NAME_RF_STORAGE "RF_STORAGE"
 #define NAME_FW_STORAGE "FW_STORAGE"
 #define NAME_NXP_CORE_CONF "NXP_CORE_CONF"
+#define NAME_NXP_GUARD_TIMER_VALUE "NXP_GUARD_TIMER_VALUE"
+#define NAME_NXP_PROP_RESET_EMVCO_CMD "NXP_PROP_RESET_EMVCO_CMD"
+#define NAME_NFA_CONFIG_FORMAT "NFA_CONFIG_FORMAT"
+#define NAME_NXP_DISCONNECT_TAG_IN_SCRN_OFF "NXP_DISCONNECT_TAG_IN_SCRN_OFF"
+#define NAME_NXP_ENABLE_DISABLE_LOGS "NXP_ENABLE_DISABLE_LOGS"
+#define NAME_NXP_RDR_DISABLE_ENABLE_LPCD "NXP_RDR_DISABLE_ENABLE_LPCD"
 #endif
 
 /**
@@ -183,12 +192,14 @@ extern char Fw_Lib_Path[256];
 #define config_name_mtp_NQ3XX   "libnfc-mtp-NQ3XX.conf"
 #define config_name_mtp_NQ4XX   "libnfc-mtp-NQ4XX.conf"
 #define config_name_mtp_SN100   "libnfc-mtp-SN100.conf"
+#define config_name_mtp_SN100_38_4MHZ   "libnfc-mtp-SN100_38_4MHZ.conf"
 #define config_name_qrd         "libnfc-qrd_default.conf"
 #define config_name_qrd1        "libnfc-qrd_rf1.conf"
 #define config_name_qrd2        "libnfc-qrd_rf2.conf"
 #define config_name_qrd_NQ3XX   "libnfc-qrd-NQ3XX.conf"
 #define config_name_qrd_NQ4XX   "libnfc-qrd-NQ4XX.conf"
 #define config_name_qrd_SN100   "libnfc-qrd-SN100.conf"
+#define config_name_qrd_SN100_38_4MHZ   "libnfc-qrd-SN100_38_4MHZ.conf"
 #define config_name_default     "libnfc-nxp_default.conf"
 
 /**
