@@ -1,6 +1,6 @@
 /******************************************************************************
  *
- *  Copyright 2019-2020 NXP
+ *  Copyright 2018-2020 NXP
  *
  *  Licensed under the Apache License, Version 2.0 (the "License");
  *  you may not use this file except in compliance with the License.
@@ -16,15 +16,17 @@
  *
  ******************************************************************************/
 
-#define LOG_TAG "nxpnfc@2.0-service"
-#include <android/hardware/nfc/1.1/INfc.h>
+#define LOG_TAG "nxpnfc@1.2-service"
+#include <android/hardware/nfc/1.2/INfc.h>
 #include <vendor/nxp/nxpnfc/2.0/INxpNfc.h>
-#include <unistd.h>
+#include <vendor/nxp/nxpnfclegacy/1.0/INxpNfcLegacy.h>
+
 
 #include <hidl/LegacySupport.h>
 #include "Nfc.h"
 #include "NxpNfc.h"
-#include "eSEClientExtns.h"
+#include "nxpnfclegacy/1.0/NxpNfcLegacy.h"
+#include <hidl/LegacySupport.h>
 
 // Generated HIDL files
 using android::hardware::nfc::V1_2::INfc;
@@ -36,57 +38,39 @@ using android::status_t;
 using android::OK;
 using vendor::nxp::nxpnfc::V2_0::INxpNfc;
 using vendor::nxp::nxpnfc::V2_0::implementation::NxpNfc;
+using vendor::nxp::nxpnfclegacy::V1_0::INxpNfcLegacy;
+using vendor::nxp::nxpnfclegacy::V1_0::implementation::NxpNfcLegacy;
 
 int main() {
-    status_t status;
+  ALOGD("Registering NFC HALIMPL Service v1.2...");
+  sp<INfc> nfc_service = new Nfc();
 
-    sp<INfc> nfc_service = nullptr;
-    sp<INxpNfc> nxp_nfc_service = nullptr;
+  configureRpcThreadpool(1, true /*callerWillJoin*/);
+  eseClient.checkIfEseClientUpdateReqd();
+  status_t status = nfc_service->registerAsService();
+  if (status != OK) {
+    LOG_ALWAYS_FATAL("Could not register service for NFC HAL Iface (%d).",
+                     status);
+    return -1;
+  }
 
-    ALOGD("NFC HAL Service 1.2 is starting.");
-    nfc_service = new Nfc();
-    if (nfc_service == nullptr) {
-        ALOGE("Can not create an instance of NFC HAL Iface, exiting.");
-        return -1;
-    }
+  ALOGD("Registering NFC HALIOCTL Service v1.0...");
+  sp<INxpNfc> nxp_nfc_service = new NxpNfc();
+  status = nxp_nfc_service->registerAsService();
+  if (status != OK) {
+    ALOGD("Could not register service for NXP NFC Extn Iface (%d).", status);
+  }
 
-    configureRpcThreadpool(1, true /*callerWillJoin*/);
-    initializeEseClient();
-    checkEseClientUpdate();
-    try {
-        status = nfc_service->registerAsService();
-        if (status != OK) {
-            LOG_ALWAYS_FATAL("Could not register service for NFC HAL Iface (%d).", status);
-            return -1;
-        }
-    } catch(const std::length_error& le) {
-      ALOGE("Could not register ese_wired_service service due to exception reason %s ",
-      le.what());
-    }
-
-    ALOGI("NXP NFC Extn Service 1.0 is starting.");
-    nxp_nfc_service = new NxpNfc();
-    if (nxp_nfc_service == nullptr) {
-        ALOGE("Can not create an instance of NXP NFC Extn Iface, exiting.");
-        return -1;
-    }
-    try {
-      status = nxp_nfc_service->registerAsService();
-      if (status != OK) {
-          ALOGE("Could not register service for NXP NFC Extn Iface (%d).", status);
-      }
-    } catch(const std::__1::system_error& e) {
-      ALOGE("Could not register nxp_nfc_service service due to exception reason %s ",
-      e.what());
-    } catch(const std::length_error& le) {
-      ALOGE("Could not register ese_wired_service service due to exception reason %s ",
-      le.what());
-    }
-
-    ALOGE("Before calling JCOP JCOS_doDownload");
-    perform_eSEClientUpdate();
-    ALOGE("After calling JCOS_doDownload");
-    ALOGI("NFC service is ready");
-    joinRpcThreadpool();
-    return 1;
+  ALOGD("Registering NFC HAL Legacy Service v1.0...");
+  sp<INxpNfcLegacy> nxp_nfc_legacy_service = new NxpNfcLegacy();
+  status = nxp_nfc_legacy_service->registerAsService();
+  if (status != OK) {
+    ALOGD("Could not register service for NXP NFC Legacy Extn Iface (%d).", status);
+  }
+  ALOGE("Before calling JCOP JCOS_doDownload");
+  eseClient.doEseUpdateIfReqd();
+  ALOGE("After calling JCOS_doDownload");
+  ALOGD("NFC HAL Service is ready");
+  joinRpcThreadpool();
+  return 1;
 }

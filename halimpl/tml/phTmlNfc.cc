@@ -656,16 +656,10 @@ NFCSTATUS phTmlNfc_Shutdown(void) {
   if (NULL != gpphTmlNfc_Context) {
     /* Reset thread variable to terminate the thread */
     gpphTmlNfc_Context->bThreadDone = 0;
-    usleep(1000);
     /* Clear All the resources allocated during initialization */
     sem_post(&gpphTmlNfc_Context->rxSemaphore);
-    usleep(1000);
     sem_post(&gpphTmlNfc_Context->txSemaphore);
-    usleep(1000);
     sem_post(&gpphTmlNfc_Context->postMsgSemaphore);
-    usleep(1000);
-    sem_post(&gpphTmlNfc_Context->postMsgSemaphore);
-    usleep(1000);
     pthread_mutex_destroy(&gpphTmlNfc_Context->readInfoUpdateMutex);
     if (0 != pthread_join(gpphTmlNfc_Context->readerThread, (void**)NULL)) {
       NXPLOG_TML_E("Fail to kill reader thread!");
@@ -961,13 +955,6 @@ NFCSTATUS phTmlNfc_IoCtl(phTmlNfc_ControlCode_t eControlCode) {
         sem_post(&gpphTmlNfc_Context->rxSemaphore);
         break;
       }
-      case phTmlNfc_e_SetJcopDwnldEnable: {
-          if(nfcFL.nfcNxpEse) {
-              wStatus = phTmlNfc_i2c_set_Jcop_dwnld_state(
-                      gpphTmlNfc_Context->pDevHandle, JCP_DWNLD_START);
-          }
-          break;
-      }
       case phTmlNfc_e_SetJcopDwnldDisable: {
           if(nfcFL.nfcNxpEse) {
               wStatus = phTmlNfc_i2c_set_Jcop_dwnld_state(
@@ -1000,44 +987,6 @@ NFCSTATUS phTmlNfc_IoCtl(phTmlNfc_ControlCode_t eControlCode) {
           if(nfcFL.nfcNxpEse) {
               wStatus = phTmlNfc_i2c_set_p61_power_state(
                               gpphTmlNfc_Context->pDevHandle, 0);
-          }
-          break;
-      }
-      case phTmlNfc_e_SetP61DisableMode: {
-          if(nfcFL.nfcNxpEse) {
-              wStatus = phTmlNfc_i2c_set_p61_power_state(
-                              gpphTmlNfc_Context->pDevHandle, 2);
-          }
-          break;
-      }
-      case phTmlNfc_e_SetP61EnableMode: {
-          {
-              wStatus = phTmlNfc_i2c_set_p61_power_state(
-                      gpphTmlNfc_Context->pDevHandle, 3);
-          }
-          break;
-      }
-      case phTmlNfc_e_RelP61Access: {
-          if(nfcFL.nfcNxpEse) {
-              wStatus = phTmlNfc_i2c_set_p61_power_state(
-                      gpphTmlNfc_Context->pDevHandle, 4);
-          }
-          break;
-      }
-      case phTmlNfc_e_RaiseEsePower: {
-          wStatus = phTmlNfc_i2c_set_p61_power_state(
-                gpphTmlNfc_Context->pDevHandle, 5);
-        break;
-      }
-      case phTmlNfc_e_ReleaseEsePower: {
-          wStatus = phTmlNfc_i2c_set_p61_power_state(
-                gpphTmlNfc_Context->pDevHandle, 6);
-         break;
-      }
-      case phTmlNfc_e_eSEChipRstMode: {
-          if(nfcFL.nfcNxpEse) {
-              wStatus = phTmlNfc_i2c_reset(
-                      gpphTmlNfc_Context->pDevHandle, 3);
           }
           break;
       }
