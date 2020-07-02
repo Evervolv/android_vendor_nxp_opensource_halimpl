@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2018, The Linux Foundation. All rights reserved.
+ * Copyright (c) 2018, 2020 The Linux Foundation. All rights reserved.
  * Not a Contribution.
  *****************************************************************************
  * Copyright (C) 2015-2019 NXP Semiconductors
@@ -140,7 +140,7 @@ bool sendRspToUpperLayer = true;
 
 phNxpNciHal_Sem_t config_data;
 
-phNxpNciClock_t phNxpNciClock = {0, {0}};
+phNxpNciClock_t phNxpNciClock = {0, {0}, false};
 
 phNxpNciRfSetting_t phNxpNciRfSet = {false, {0}};
 
@@ -4706,10 +4706,30 @@ extern "C" hal_api_struct_t const api_funcs = {
   phNxpNciHal_configDiscShutdown,
   phNxpNciHal_getVendorConfig,
   phNxpNciHal_getVendorConfig_1_2,
-  phNxpNciHal_ioctl,
   phNxpNciHal_get_debug_status,
   phNxpNciHal_getNfcChipId,
   phNxpNciHal_getNfcFirmwareVersion,
+  phNxpNciHal_getSystemProperty,
+  phNxpNciHal_setSystemProperty,
+  phNxpNciHal_resetEse,
+  seteSEClientState,
+  eSEClientUpdate_NFC_Thread,
+  phNxpNciHal_Abort,
+  phNxpNciHal_setNxpTransitConfig,
+  getJcopUpdateRequired,
+  getLsUpdateRequired,
+  phNxpNciHal_setEseState,
+  phNxpHal_getchipType,
+  phNxpNciHal_setNfcServicePid,
+  phNxpNciHal_getEseState,
+  phNxpNciHal_ReleaseSVDDWait,
+  phNxpNciHal_ReleaseDWPOnOffWait,
+  phNxpNciHal_getSPMStatus,
+  phNxpNciHal_hciInitUpdateState,
+  phNxpNciHal_hciInitUpdateStateComplete,
+  phNxpNciHal_GetCachedNfccConfig,
+  phNxpNciHal_getNxpConfig,
+  phNxpNciHal_nciTransceive,
 };
 
 /******************************************************************************
@@ -4972,8 +4992,11 @@ void phNxpNciHal_GetCachedNfccConfig(phNxpNci_getCfg_info_t *pGetCfg_info){
 **
 ** Returns          status of eSE reset response
 *******************************************************************************/
-NFCSTATUS phNxpNciHal_resetEse() {
+NFCSTATUS phNxpNciHal_resetEse(uint64_t resetType) {
   NFCSTATUS status = NFCSTATUS_FAILED;
+
+  UNUSED(resetType);
+
 #ifdef ENABLE_ESE_CLIENT
   int level = 0;
   NXPLOG_NCIHAL_D("%s Entry ", __func__);
@@ -5027,9 +5050,9 @@ bool phNxpNciHal_Abort() {
   return ret;
 }
 
-bool getJcopUpdateRequired() { return false; }
+uint8_t getJcopUpdateRequired() { return 0; }
 
-bool getLsUpdateRequired() { return false; }
+uint8_t getLsUpdateRequired() { return 0; }
 
 string phNxpNciHal_getSystemProperty(string key) { key = ""; return key; }
 

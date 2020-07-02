@@ -98,10 +98,12 @@ cc_library_shared {
         "libhidlbase",
         "liblog",
         "libutils",
+        "se_nq_extn_client",
     ],
 
     header_libs: [
         "libese_client_headers",
+        "libnqnfc_hal_headers",
     ],
 
     sanitize: {

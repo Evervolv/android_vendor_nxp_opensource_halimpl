@@ -331,7 +331,7 @@ void phNxpNciHal_GetCachedNfccConfig(phNxpNci_getCfg_info_t *pGetCfg_info);
 **
 ** Returns          status of eSE reset response
 *******************************************************************************/
-NFCSTATUS phNxpNciHal_resetEse();
+NFCSTATUS phNxpNciHal_resetEse(uint64_t resetType);
 
 /******************************************************************************
  * Function         phNxpNciHal_nciTransceive
