@@ -22,7 +22,7 @@
  *
  *  The original Work has been changed by NXP Semiconductors.
  *
- *  Copyright (C) 2013-2019 NXP Semiconductors
+ *  Copyright (C) 2013-2020 NXP Semiconductors
  *
  *  Licensed under the Apache License, Version 2.0 (the "License");
  *  you may not use this file except in compliance with the License.
@@ -54,6 +54,7 @@
 #include <string>
 #include <vector>
 #include <log/log.h>
+#include <android-base/properties.h>
 
 #include <phNxpConfig.h>
 #include <phNxpLog.h>
@@ -92,13 +93,14 @@ const char tr_config_timestamp_path[] =
     "/data/vendor/nfc/libnfc-nxpTransitConfigState.bin";
 const char config_timestamp_path[] =
         "/data/vendor/nfc/libnfc-nxpConfigState.bin";
-/*const char default_nxp_config_path[] =
-        "/vendor/etc/libnfc-nxp.conf";*/
 char nxp_rf_config_path[256] =
         "/system/vendor/libnfc-nxp_RF.conf";
 char Fw_Lib_Path[256] =
         "/vendor/lib/libsn100u_fw.so";
 const char transit_config_path[] = "/data/vendor/nfc/libnfc-nxpTransit.conf";
+
+extern char default_nxp_config_path[];
+
 /**
  *  @brief target platform ID values.
  */
@@ -150,14 +152,17 @@ typedef enum
   TARGET_SM8150_SDx55                  = 361, /**< SM8150_SDx55 target */
   TARGET_SM8250                        = 356, /**< SM8250 target */
   TARGET_SM7250                        = 400, /**< SM7250 target */
+  TARGET_SM7250_M                      = 440, /**< SM7250_M target */
   TARGET_SM6125                        = 394, /**< SM6125 target */
+  TARGET_BENGAL                        = 417, /**< BENGAL target */
+  TARGET_SM_BENGAL_H                   = 444, /**< SM_BENGAL_H target */
+  TARGET_SMP_BENGAL_H                  = 445, /**< SMP_BENGAL_H target */
+  TARGET_SM8350                        = 415, /**< SM8350 target */
   TARGET_DEFAULT                       = TARGET_GENERIC, /**< new targets */
   TARGET_INVALID                       = 0xFF
 } TARGETTYPE;
 
 void readOptionalConfig(const char* optional);
-
-namespace {
 
 size_t readConfigFile(const char* fileName, uint8_t** p_data) {
   FILE* fd = fopen(fileName, "rb");
@@ -188,11 +193,9 @@ size_t readConfigFile(const char* fileName, uint8_t** p_data) {
   return 0;
 }
 
-}  // namespace
-
 using namespace ::std;
 
-void findConfigFilePathFromTransportConfigPaths(const string& configName, string& filePath);
+bool findConfigFilePathFromTransportConfigPaths(const string& configName, string& filePath);
 
 class CNfcParam : public string {
  public:
@@ -425,10 +428,18 @@ int CNfcConfig::getconfiguration_id (char * config_file)
         case TARGET_SM7150:
         case TARGET_SM8250:
         case TARGET_SM7250:
+        case TARGET_SM7250_M:
         case TARGET_SM8150_SDx55:
         case TARGET_SM6125:
+        case TARGET_SM8350:
             config_id = QRD_TYPE_SN100;
             strlcpy(config_file, config_name_qrd_SN100, MAX_DATA_CONFIG_PATH_LEN);
+            break;
+        case TARGET_BENGAL:
+        case TARGET_SM_BENGAL_H:
+        case TARGET_SMP_BENGAL_H:
+            config_id = QRD_TYPE_SN100;
+            strlcpy(config_file, config_name_qrd_SN100_38_4MHZ, MAX_DATA_CONFIG_PATH_LEN);
             break;
         case TARGET_SDM845:
         case TARGET_SDM670:
@@ -486,10 +497,18 @@ int CNfcConfig::getconfiguration_id (char * config_file)
         case TARGET_SM7150:
         case TARGET_SM8250:
         case TARGET_SM7250:
+        case TARGET_SM7250_M:
         case TARGET_SM8150_SDx55:
         case TARGET_SM6125:
+        case TARGET_SM8350:
             config_id = MTP_TYPE_SN100;
             strlcpy(config_file, config_name_mtp_SN100, MAX_DATA_CONFIG_PATH_LEN);
+            break;
+        case TARGET_BENGAL:
+        case TARGET_SM_BENGAL_H:
+        case TARGET_SMP_BENGAL_H:
+            config_id = MTP_TYPE_SN100;
+            strlcpy(config_file, config_name_mtp_SN100_38_4MHZ, MAX_DATA_CONFIG_PATH_LEN);
             break;
         case TARGET_SDM845:
         case TARGET_SDM670:
@@ -588,18 +607,19 @@ inline int getDigitValue(char c, int base) {
 ** Returns:     none
 **
 *******************************************************************************/
-void findConfigFilePathFromTransportConfigPaths(const string& configName,
+bool findConfigFilePathFromTransportConfigPaths(const string& configName,
                                                 string& filePath) {
   for (int i = 0; i < transport_config_path_size - 1; i++) {
+    if (configName.empty()) break;
     filePath.assign(transport_config_paths[i]);
     filePath += configName;
     struct stat file_stat;
     if (stat(filePath.c_str(), &file_stat) == 0 && S_ISREG(file_stat.st_mode)) {
-      return;
+      return true;
     }
   }
-  filePath.assign(transport_config_paths[transport_config_path_size - 1]);
-  filePath += configName;
+  filePath = "";
+  return false;
 }
 
 /*******************************************************************************
@@ -881,6 +901,11 @@ CNfcConfig& CNfcConfig::GetInstance() {
         findConfigFilePathFromTransportConfigPaths(config_name_default, strPath);
     }
     ALOGI("config file used = %s\n",strPath.c_str());
+    /*
+     * overwrite default value with config file picked at runtime
+     * using dynamic config feature
+     */
+    strlcpy(default_nxp_config_path, strPath.c_str(), MAX_DATA_CONFIG_PATH_LEN);
     theInstance.readConfig(strPath.c_str(), true);
 #if (NXP_EXTNS == TRUE)
     theInstance.readNxpRFConfig(nxp_rf_config_path);
@@ -1409,8 +1434,8 @@ extern "C" int GetNxpNumValue(const char* name, void* pValue,
 **
 *******************************************************************************/
 extern "C" void setNxpRfConfigPath(const char* name) {
-  memset((void *)nxp_rf_config_path, 0, sizeof(nxp_rf_config_path));
-  strlcpy((char *)nxp_rf_config_path, name, sizeof(nxp_rf_config_path));
+  memset(nxp_rf_config_path, 0, sizeof(nxp_rf_config_path));
+  strlcpy(nxp_rf_config_path, name, sizeof(nxp_rf_config_path));
   ALOGD("nxp_rf_config_path=%s", nxp_rf_config_path);
 }
 
@@ -1424,8 +1449,8 @@ extern "C" void setNxpRfConfigPath(const char* name) {
 **
 *******************************************************************************/
 extern "C" void setNxpFwConfigPath(const char* name) {
-  memset((void *)Fw_Lib_Path, 0, sizeof(Fw_Lib_Path));
-  strlcpy((char *)Fw_Lib_Path, name, sizeof(Fw_Lib_Path));
+  memset(Fw_Lib_Path, 0, sizeof(Fw_Lib_Path));
+  strlcpy(Fw_Lib_Path, name, sizeof(Fw_Lib_Path));
   ALOGD("Fw_Lib_Path=%s", Fw_Lib_Path);
 }
 

@@ -6,8 +6,7 @@ TARGET_USES_NQ_NFC := false
 endif
 endif
 
-NQ_VENDOR_NFC += vendor.nxp.hardware.nfc@1.2-service
-NQ_VENDOR_NFC += nfc_nci.nqx.default
+NQ_VENDOR_NFC += vendor.nxp.hardware.nfc@2.0-service
 NQ_VENDOR_NFC += nfc_nci.nqx.default.hw
 NQ_VENDOR_NFC += nfc_nci.sn100.default
 NQ_VENDOR_NFC += nfc_nci.sn100.default.hw

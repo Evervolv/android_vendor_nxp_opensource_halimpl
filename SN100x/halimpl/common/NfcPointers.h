@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2018, The Linux Foundation. All rights reserved.
+ * Copyright (c) 2018, 2020 The Linux Foundation. All rights reserved.
  *
  * Redistribution and use in source and binary forms, with or without
  * modification, are permitted provided that the following conditions are
@@ -28,6 +28,7 @@
  */
 
 #include "phNxpNciHal_Adaptation.h"  //NfcConfig, nfc_stack_callback_t*, nfc_stack_data_callback_t*
+#include "phNxpNciHal_Common.h"
 #include <stdint.h>
 
 /* This struct of function pointers can be exported with extern "C" and used to
@@ -56,12 +57,52 @@ typedef struct HAL_API_struct {
     void(*phNxpNciHal_getVendorConfig)(android::hardware::nfc::V1_1::NfcConfig&);
     // phNxpNciHal_getVendorConfig_V_1_2
     void(*phNxpNciHal_getVendorConfig_1_2)(NfcConfig&);
-    // phNxpNciHal_ioctl
-    int(*phNxpNciHal_ioctl)(long, void*);
     // phNxpNciHal_get_debug_status
     bool(*phNxpNciHal_get_debug_status)(void);
     // phNxpNciHal_getNfcChipId
     string(*phNxpNciHal_getNfcChipId)(void);
     // phNxpNciHal_getNfcFirmwareVersion
     string(*phNxpNciHal_getNfcFirmwareVersion)(void);
+    // phNxpNciHal_getSystemProperty
+    string(*phNxpNciHal_getSystemProperty)(string key);
+    // phNxpNciHal_setSystemProperty
+    bool(*phNxpNciHal_setSystemProperty)(string key, string value);
+    // phNxpNciHal_resetEse
+    NFCSTATUS(*phNxpNciHal_resetEse)(uint64_t resetType);
+    // seteSEClientState
+    void (*seteSEClientState)(uint8_t);
+    // eSEClientUpdate_NFC_Thread
+    void(*eSEClientUpdate_NFC_Thread)(void);
+    // phNxpNciHal_Abort
+    bool(*phNxpNciHal_Abort)(void);
+    // phNxpNciHal_setNxpTransitConfig
+    bool(*phNxpNciHal_setNxpTransitConfig)(char *);
+    // getJcopUpdateRequired
+    uint8_t(*getJcopUpdateRequired)(void);
+    // getLsUpdateRequired
+    uint8_t(*getLsUpdateRequired)(void);
+    // phNxpNciHal_setEseState
+    NFCSTATUS(*phNxpNciHal_setEseState)(phNxpNfcHalEseState);
+    // phNxpHal_getchipType
+    uint8_t(*phNxpHal_getchipType)(void);
+    // phNxpNciHal_setNfcServicePid
+    uint16_t(*phNxpNciHal_setNfcServicePid)(uint64_t);
+    // phNxpNciHal_getEseState
+    NFCSTATUS(*phNxpNciHal_getEseState)(void);
+    // phNxpNciHal_ReleaseSVDDWait
+    NFCSTATUS(*phNxpNciHal_ReleaseSVDDWait)(uint32_t);
+    // phNxpNciHal_ReleaseDWPOnOffWait
+    NFCSTATUS(*phNxpNciHal_ReleaseDWPOnOffWait)(uint32_t);
+    // phNxpNciHal_getSPMStatus
+    int(*phNxpNciHal_getSPMStatus)(uint32_t);
+    // phNxpNciHal_hciInitUpdateState
+    int32_t(*phNxpNciHal_hciInitUpdateState)(phNxpNfcHciInitStatus);
+    // phNxpNciHal_hciInitUpdateStateComplete
+    int32_t(*phNxpNciHal_hciInitUpdateStateComplete)(void);
+    // phNxpNciHal_GetCachedNfccConfig
+    void(*phNxpNciHal_GetCachedNfccConfig)(phNxpNci_getCfg_info_t *);
+    // phNxpNciHal_getNxpConfig
+    void(*phNxpNciHal_getNxpConfig)(phNxpNfcHalConfig *);
+    // phNxpNciHal_nciTransceive
+    void(*phNxpNciHal_nciTransceive)(phNxpNci_Extn_Cmd_t *, phNxpNci_Extn_Resp_t *);
 } hal_api_struct_t;

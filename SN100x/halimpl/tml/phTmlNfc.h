@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 2015-2018 NXP Semiconductors
+ * Copyright (C) 2010-2020 NXP Semiconductors
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -16,17 +16,18 @@
 
 /*
  * Transport Mapping Layer header files containing APIs related to initializing,
- *reading
+ * reading
  * and writing data into files provided by the driver interface.
  *
  * API listed here encompasses Transport Mapping Layer interfaces required to be
- *mapped
+ * mapped
  * to different Interfaces and Platforms.
  *
  */
 
 #ifndef PHTMLNFC_H
 #define PHTMLNFC_H
+
 #include <phNfcCommon.h>
 
 /*
@@ -60,13 +61,13 @@
  * The value of field wStatus can be interpreted as:
  *
  *     - NFCSTATUS_SUCCESS                    Transaction performed
- *successfully.
+ * successfully.
  *     - NFCSTATUS_FAILED                     Failed to wait on Read/Write
- *operation.
+ * operation.
  *     - NFCSTATUS_INSUFFICIENT_STORAGE       Not enough memory to store data in
- *case of read.
+ * case of read.
  *     - NFCSTATUS_BOARD_COMMUNICATION_ERROR  Failure to Read/Write from the
- *file or timeout.
+ * file or timeout.
  */
 
 typedef struct phTmlNfc_TransactInfo {
@@ -108,7 +109,8 @@ typedef enum {
   phTmlNfc_e_EnableNormalMode, /* Hardware setting for normal mode of operation
                                  */
   phTmlNfc_e_PowerReset = 5,
-} phTmlNfc_ControlCode_t; /* Control code for IOCTL call */
+  phTmlNfc_e_SetFwDownloadHdrSize,
+} phTmlNfc_ControlCode_t;     /* Control code for IOCTL call */
 
 /*
  * Enable / Disable Re-Transmission of Packets
@@ -136,6 +138,16 @@ typedef struct phTmlNfc_ReadWriteInfo {
   uint16_t wLength;      /*Length of data read/written */
   NFCSTATUS wWorkStatus; /*Status of the transaction performed */
 } phTmlNfc_ReadWriteInfo_t;
+
+/*
+ * NFCC platform interface type
+ */
+enum platform_interface_type {
+    /* I2C physical IF for NFCC */
+    PLATFORM_IF_I2C = 0,
+    /* I3C physical IF for NFCC */
+    PLATFORM_IF_I3C,
+};
 
 /*
  *Base Context Structure containing members required for entire session
@@ -168,6 +180,7 @@ typedef struct phTmlNfc_Context {
       gWriterCbflag; /* flag to indicate write callback message is pushed to
                         queue*/
   long    nfc_service_pid; /*NFC Service PID to be used by driver to signal*/
+  int platform_type; /*for common(i2c or i3c) mw implementation*/
 } phTmlNfc_Context_t;
 
 /*
@@ -195,16 +208,17 @@ typedef struct phTmlNfc_Config {
  * TML Deferred Callback structure used to invoke Upper layer Callback function.
  */
 typedef struct {
+  /* Deferred callback function to be invoked */
   pphTmlNfc_DeferFuncPointer_t pDef_call;
-                 /* Source identifier
-                  *
-                  * Identifier of the source which posted the message
-                  */
+  /* Source identifier
+   *
+   * Identifier of the source which posted the message
+   */
   uint32_t dwMsgPostedThread;
   /** Actual Message
    *
    * This is passed as a parameter passed to the deferred callback function
-   *pDef_call. */
+   * pDef_call. */
   void* pParams;
 } phTmlNfc_DeferMsg_t; /* DeferMsg structure passed to User Thread */
 
